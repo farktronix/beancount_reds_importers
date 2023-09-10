@@ -116,6 +116,7 @@ class Importer(importer.ImporterProtocol, transactionbuilder.TransactionBuilder)
             "capgainsd_st": self.config['capgainsd_st'],
             "income":       self.config['interest'],
             "invexpense":   self.config['expenses'],
+            "jrnlsec":      self.config.get('margin') or "Assets:Unknown-Margin"
         }
 
         if 'transfer' in self.config:
@@ -247,6 +248,7 @@ class Importer(importer.ImporterProtocol, transactionbuilder.TransactionBuilder)
             units = -1 * abs(ot.units)
             if not is_money_market:
                 metadata['todo'] = 'TODO: this entry is incomplete until lots are selected (bean-doctor context <filename> <lineno>)'  # noqa: E501
+        
         if ot.type in ['reinvest']:  # dividends are booked to commodity_leaf. Eg: Income:Dividends:HOOLI
             ticker_val = ticker
         else:
@@ -298,7 +300,7 @@ class Importer(importer.ImporterProtocol, transactionbuilder.TransactionBuilder)
 
     def generate_transfer_entry(self, ot, file, counter):
         """ Cash transactions, or in-kind transfers. One of:
-            [credit, debit, dep, transfer, income, dividends, capgainsd_lt, capgainsd_st, other]"""
+            [credit, debit, dep, transfer, income, dividends, capgainsd_lt, capgainsd_st, other, 'jrnlsec']"""
         config = self.config
         metadata = data.new_metadata(file.name, next(counter))
         metadata.update(self.build_metadata(file, metatype='transaction_transfer', data={'transaction': ot}))
@@ -372,7 +374,7 @@ class Importer(importer.ImporterProtocol, transactionbuilder.TransactionBuilder)
             if ot.type in ['buymf', 'sellmf', 'buystock', 'buydebt', 'sellstock', 'buyother', 'sellother', 'reinvest']:
                 entry = self.generate_trade_entry(ot, file, counter)
             elif ot.type in ['other', 'credit', 'debit', 'transfer', 'dep', 'income',
-                             'dividends', 'capgainsd_st', 'capgainsd_lt', 'cash', 'payment', 'check', 'invexpense']:
+                             'dividends', 'capgainsd_st', 'capgainsd_lt', 'cash', 'payment', 'check', 'invexpense', 'jrnlsec']:
                 entry = self.generate_transfer_entry(ot, file, counter)
             else:
                 print("ERROR: unknown entry type:", ot.type)
